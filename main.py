@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
+import psycopg
 import os
-import psycopg2
-from urllib.parse import urlparse
 
 app = Flask(__name__)
 
@@ -14,14 +13,9 @@ def get_db_connection():
         try:
             DATABASE_URL = os.environ.get('DATABASE_URL')
             if DATABASE_URL:
-                url = urlparse(DATABASE_URL)
-                db_conn = psycopg2.connect(
-                    database=url.path[1:],
-                    user=url.username,
-                    password=url.password,
-                    host=url.hostname,
-                    port=url.port
-                )
+                # psycopg3 использует строку подключения напрямую
+                db_conn = psycopg.connect(DATABASE_URL)
+                
                 # Создаем таблицу если её нет
                 with db_conn.cursor() as cur:
                     cur.execute("""
@@ -32,8 +26,11 @@ def get_db_connection():
                         )
                     """)
                     db_conn.commit()
+                print("Database connected successfully")
+            else:
+                print("DATABASE_URL not found")
         except Exception as e:
-            print(f"Database error: {e}")
+            print(f"Database connection error: {e}")
             db_conn = None
     return db_conn
 
